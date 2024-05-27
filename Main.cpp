@@ -1,3 +1,81 @@
+/*#include <SDL.h>
+#include <SDL_image.h>
+#include <iostream>
+
+const int WINDOW_WIDTH = 1920;
+const int WINDOW_HEIGHT = 1080;
+
+int main(int argc, char* argv[]) {
+    // Инициализация SDL
+    if (SDL_Init(SDL_INIT_VIDEO) < 0) {
+        std::cerr << "Failed to initialize SDL: " << SDL_GetError() << std::endl;
+        return 1;
+    }
+
+    // Инициализация SDL_image
+    if (IMG_Init(IMG_INIT_PNG) < 0) {
+        std::cerr << "Failed to initialize SDL_image: " << IMG_GetError() << std::endl;
+        SDL_Quit();
+        return 1;
+    }
+
+    // Создание окна
+    SDL_Window* window = SDL_CreateWindow("My Game", SDL_WINDOWPOS_UNDEFINED, SDL_WINDOWPOS_UNDEFINED, WINDOW_WIDTH, WINDOW_HEIGHT, SDL_WINDOW_SHOWN);
+    if (window == nullptr) {
+        std::cerr << "Failed to create window: " << SDL_GetError() << std::endl;
+        IMG_Quit();
+        SDL_Quit();
+        return 1;
+    }
+
+    // Создание рендерера
+    SDL_Renderer* renderer = SDL_CreateRenderer(window, -1, SDL_RENDERER_ACCELERATED);
+    if (renderer == nullptr) {
+        std::cerr << "Failed to create renderer: " << SDL_GetError() << std::endl;
+        SDL_DestroyWindow(window);
+        IMG_Quit();
+        SDL_Quit();
+        return 1;
+    }
+
+    // Загрузка фонового изображения
+    SDL_Texture* background = IMG_LoadTexture(renderer, "BG.png");
+    if (background == nullptr) {
+        std::cerr << "Failed to load background image: " << IMG_GetError() << std::endl;
+        SDL_DestroyRenderer(renderer);
+        SDL_DestroyWindow(window);
+        IMG_Quit();
+        SDL_Quit();
+        return 1;
+    }
+
+    // Основной игровой цикл
+    bool running = true;
+    while (running) {
+        SDL_Event event;
+        while (SDL_PollEvent(&event)) {
+            if (event.type == SDL_QUIT) {
+                running = false;
+            }
+        }
+
+        // Отрисовка фона
+        SDL_RenderClear(renderer);
+        SDL_RenderCopy(renderer, background, nullptr, nullptr);
+        SDL_RenderPresent(renderer);
+    }
+
+    // Очистка ресурсов
+    SDL_DestroyTexture(background);
+    SDL_DestroyRenderer(renderer);
+    SDL_DestroyWindow(window);
+    IMG_Quit();
+    SDL_Quit();
+
+    return 0;
+}
+*/
+
 #include <SDL.h>
 #include <SDL_image.h>
 #include <SDL_ttf.h>
@@ -175,7 +253,7 @@ int main(int argc, char* argv[]) {
             if (event.type == SDL_KEYDOWN) {
                 if (event.key.keysym.sym == SDLK_ESCAPE) {
                     running = false;
-                }
+            }
                 if (currentShip < ships.size()) {
                     switch (event.key.keysym.sym) {
                     case SDLK_w:
@@ -200,26 +278,26 @@ int main(int argc, char* argv[]) {
                             placeShip(ships[currentShip], grid, currentShip + 1);
                             currentShip++;
                         }
-                    }
+        }
                 }
             }
 
-            // Очистка экрана
-            SDL_RenderClear(renderer);
+        // Очистка экрана
+        SDL_RenderClear(renderer);
 
-            // Отрисовка фонового изображения
-            SDL_RenderCopy(renderer, background, nullptr, nullptr);
-            
-            // Отрисовка текста
-            SDL_Color textColor = { 0, 0, 0, 255 };
+        // Отрисовка фонового изображения
+        SDL_RenderCopy(renderer, background, nullptr, nullptr);
+
+        // Отрисовка текста
+        SDL_Color textColor = { 0, 0, 0, 255 };
             SDL_Surface* textSurface = TTF_RenderUTF8_Solid(font, std::to_string(score).c_str(), textColor);
-            SDL_Texture* textTexture = SDL_CreateTextureFromSurface(renderer, textSurface);
-            int textWidth, textHeight;
-            SDL_QueryTexture(textTexture, nullptr, nullptr, &textWidth, &textHeight);
-            SDL_Rect textRect = { WINDOW_WIDTH - 450, 198, textWidth, textHeight };
-            SDL_RenderCopy(renderer, textTexture, nullptr, &textRect);
-            SDL_FreeSurface(textSurface);
-            SDL_DestroyTexture(textTexture);
+        SDL_Texture* textTexture = SDL_CreateTextureFromSurface(renderer, textSurface);
+        int textWidth, textHeight;
+        SDL_QueryTexture(textTexture, nullptr, nullptr, &textWidth, &textHeight);
+        SDL_Rect textRect = { WINDOW_WIDTH - 450, 198, textWidth, textHeight };
+        SDL_RenderCopy(renderer, textTexture, nullptr, &textRect);
+        SDL_FreeSurface(textSurface);
+        SDL_DestroyTexture(textTexture);
 
             // Вывод текста при размещении
             if (Placement == true)
@@ -245,11 +323,11 @@ int main(int argc, char* argv[]) {
                 // Третья строчка
                 {
                     textSurface = TTF_RenderUTF8_Solid(font, "Enter - разместить", textColor);
-                    textTexture = SDL_CreateTextureFromSurface(renderer, textSurface);
-                    SDL_QueryTexture(textTexture, nullptr, nullptr, &textWidth, &textHeight);
+        textTexture = SDL_CreateTextureFromSurface(renderer, textSurface);
+        SDL_QueryTexture(textTexture, nullptr, nullptr, &textWidth, &textHeight);
                     textRect = { 66, 870, textWidth, textHeight };
-                    SDL_RenderCopy(renderer, textTexture, nullptr, &textRect);
-                    SDL_FreeSurface(textSurface);
+        SDL_RenderCopy(renderer, textTexture, nullptr, &textRect);
+        SDL_FreeSurface(textSurface);
                     SDL_DestroyTexture(textTexture); }
             }
             
@@ -265,9 +343,9 @@ int main(int argc, char* argv[]) {
                 renderShip(renderer, ships[currentShip]);
             }
 
-            // Обновление экрана
-            SDL_RenderPresent(renderer);
-        }
+        // Обновление экрана
+        SDL_RenderPresent(renderer);
+    }
     }
 
     // Очистка ресурсов
