@@ -1,81 +1,3 @@
-/*#include <SDL.h>
-#include <SDL_image.h>
-#include <iostream>
-
-const int WINDOW_WIDTH = 1920;
-const int WINDOW_HEIGHT = 1080;
-
-int main(int argc, char* argv[]) {
-    // Инициализация SDL
-    if (SDL_Init(SDL_INIT_VIDEO) < 0) {
-        std::cerr << "Failed to initialize SDL: " << SDL_GetError() << std::endl;
-        return 1;
-    }
-
-    // Инициализация SDL_image
-    if (IMG_Init(IMG_INIT_PNG) < 0) {
-        std::cerr << "Failed to initialize SDL_image: " << IMG_GetError() << std::endl;
-        SDL_Quit();
-        return 1;
-    }
-
-    // Создание окна
-    SDL_Window* window = SDL_CreateWindow("My Game", SDL_WINDOWPOS_UNDEFINED, SDL_WINDOWPOS_UNDEFINED, WINDOW_WIDTH, WINDOW_HEIGHT, SDL_WINDOW_SHOWN);
-    if (window == nullptr) {
-        std::cerr << "Failed to create window: " << SDL_GetError() << std::endl;
-        IMG_Quit();
-        SDL_Quit();
-        return 1;
-    }
-
-    // Создание рендерера
-    SDL_Renderer* renderer = SDL_CreateRenderer(window, -1, SDL_RENDERER_ACCELERATED);
-    if (renderer == nullptr) {
-        std::cerr << "Failed to create renderer: " << SDL_GetError() << std::endl;
-        SDL_DestroyWindow(window);
-        IMG_Quit();
-        SDL_Quit();
-        return 1;
-    }
-
-    // Загрузка фонового изображения
-    SDL_Texture* background = IMG_LoadTexture(renderer, "BG.png");
-    if (background == nullptr) {
-        std::cerr << "Failed to load background image: " << IMG_GetError() << std::endl;
-        SDL_DestroyRenderer(renderer);
-        SDL_DestroyWindow(window);
-        IMG_Quit();
-        SDL_Quit();
-        return 1;
-    }
-
-    // Основной игровой цикл
-    bool running = true;
-    while (running) {
-        SDL_Event event;
-        while (SDL_PollEvent(&event)) {
-            if (event.type == SDL_QUIT) {
-                running = false;
-            }
-        }
-
-        // Отрисовка фона
-        SDL_RenderClear(renderer);
-        SDL_RenderCopy(renderer, background, nullptr, nullptr);
-        SDL_RenderPresent(renderer);
-    }
-
-    // Очистка ресурсов
-    SDL_DestroyTexture(background);
-    SDL_DestroyRenderer(renderer);
-    SDL_DestroyWindow(window);
-    IMG_Quit();
-    SDL_Quit();
-
-    return 0;
-}
-*/
-
 #include <SDL.h>
 #include <SDL_image.h>
 #include <SDL_ttf.h>
@@ -139,6 +61,7 @@ SDL_Texture* loadBackground(SDL_Renderer* renderer) {
     return background;
 }
 
+//Для размещения
 const int CELL_SIZE = 54;
 const int CELL_SPACING = 6;
 const int GRID_OFFSET_X = 72;
