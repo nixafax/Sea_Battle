@@ -7,6 +7,7 @@
 #include <cstdlib>
 #include <ctime>
 #include <queue>
+#include <fstream>
 
 const int WINDOW_WIDTH = 1920;
 const int WINDOW_HEIGHT = 1080;
@@ -395,6 +396,29 @@ void ArrowReset(std::vector<std::vector<int>>& grid) {
     }
 }
 
+void saveToFile(const std::string& input, int score) {
+    std::ofstream outFile("LB.txt", std::ios::app);
+    if (outFile.is_open()) {
+        outFile << input << " " << score << "\n";
+        outFile.close();
+    }
+    else {
+        std::cerr << "Unable to open file for writing." << std::endl;
+    }
+}
+
+void TextRender(SDL_Renderer* renderer, TTF_Font* font, const std::string& text, int x, int y) {
+    SDL_Color textColor = { 0, 0, 0, 255 };
+    SDL_Surface* textSurface = TTF_RenderUTF8_Solid(font, text.c_str(), textColor);
+    SDL_Texture* textTexture = SDL_CreateTextureFromSurface(renderer, textSurface);
+    int textWidth, textHeight;
+    SDL_QueryTexture(textTexture, nullptr, nullptr, &textWidth, &textHeight);
+    SDL_Rect textRect = { x, y, textWidth, textHeight };
+    SDL_RenderCopy(renderer, textTexture, nullptr, &textRect);
+    SDL_FreeSurface(textSurface);
+    SDL_DestroyTexture(textTexture);
+}
+
 int main(int argc, char* argv[]) {
     // Инициализация SDL и SDL_image
     if (!initSDL()) {
@@ -454,9 +478,10 @@ int main(int argc, char* argv[]) {
     int currentShip = 0;
     int cursorX = 0;
     int cursorY = 0;
+    std::string inputText = "";
 
-    std::vector<Ship> ships = { Ship(4), Ship(3), Ship(3), Ship(2), Ship(2), Ship(2), Ship(1), Ship(1), Ship(1), Ship(1) };
-    //std::vector<Ship> ships = { Ship(1), Ship(1) };
+    //std::vector<Ship> ships = { Ship(4), Ship(3), Ship(3), Ship(2), Ship(2), Ship(2), Ship(1), Ship(1), Ship(1), Ship(1) };
+    std::vector<Ship> ships = { Ship(1), Ship(1) };
     std::vector<std::vector<int>> grid(10, std::vector<int>(10, 0));
 
     std::vector<std::vector<int>> enemy_field(10, std::vector<int>(10, 0));
@@ -469,6 +494,9 @@ int main(int argc, char* argv[]) {
         while (SDL_PollEvent(&event)) {
             if (event.type == SDL_QUIT) {
                 running = false;
+            }
+            if (event.type == SDL_TEXTINPUT) {
+                inputText += event.text.text;
             }
             if (event.type == SDL_KEYDOWN) {
                 if (event.key.keysym.sym == SDLK_ESCAPE) {
@@ -532,13 +560,22 @@ int main(int argc, char* argv[]) {
                                 Play = false;
                                 Player_attack = false;
                                 Enemy_attack = false;
+                                inputText = "";
                             }
                         }
                         break;
                     }
                 }
                 if (Win || Loose) {
-                    
+                    if (event.key.keysym.sym == SDLK_BACKSPACE && inputText.length() > 0) {
+                        inputText.pop_back();
+                    }
+                    else if (event.key.keysym.sym == SDLK_RETURN) {
+                        if (inputText.length() >= 2) {
+                            saveToFile(inputText, score);
+                            inputText = "";
+                        }
+                    }
                     if (event.key.keysym.sym == SDLK_r) {
                         score = 100;
                         number_of_shots = 100;
@@ -586,104 +623,42 @@ int main(int argc, char* argv[]) {
                 //std::cout << "Play" << std::endl;
             }
         }
-        //SDL_RenderCopy(renderer, background, nullptr, nullptr);
         
         // Вывод текста при размещении
         if (Placement == true)
         {
-            SDL_Color textColor = { 0, 0, 0, 255 };
-            // Первая строчка
-            {
-            SDL_Surface* textSurface = TTF_RenderUTF8_Solid(font, "w/a/s/d - передвижение", textColor);
-            SDL_Texture* textTexture = SDL_CreateTextureFromSurface(renderer, textSurface);
-            int textWidth, textHeight;
-            SDL_QueryTexture(textTexture, nullptr, nullptr, &textWidth, &textHeight);
-            SDL_Rect textRect = { 66, 726, textWidth, textHeight };
-            SDL_RenderCopy(renderer, textTexture, nullptr, &textRect);
-            SDL_FreeSurface(textSurface);
-            SDL_DestroyTexture(textTexture); }
-            // Вторая строчка
-            {
-            SDL_Surface* textSurface = TTF_RenderUTF8_Solid(font, "r - поворот", textColor);
-            SDL_Texture* textTexture = SDL_CreateTextureFromSurface(renderer, textSurface);
-            int textWidth, textHeight;
-            SDL_QueryTexture(textTexture, nullptr, nullptr, &textWidth, &textHeight);
-            SDL_Rect textRect = { 66, 798, textWidth, textHeight };
-            SDL_RenderCopy(renderer, textTexture, nullptr, &textRect);
-            SDL_FreeSurface(textSurface);
-            SDL_DestroyTexture(textTexture); }
-            // Третья строчка
-            {
-            SDL_Surface* textSurface = TTF_RenderUTF8_Solid(font, "Enter - разместить", textColor);
-            SDL_Texture* textTexture = SDL_CreateTextureFromSurface(renderer, textSurface);
-            int textWidth, textHeight;
-            SDL_QueryTexture(textTexture, nullptr, nullptr, &textWidth, &textHeight);
-            SDL_Rect textRect = { 66, 870, textWidth, textHeight };
-            SDL_RenderCopy(renderer, textTexture, nullptr, &textRect);
-            SDL_FreeSurface(textSurface);
-            SDL_DestroyTexture(textTexture); }
+            TextRender(renderer, font, "w/a/s/d - передвижение", 66, 726);
+            TextRender(renderer, font, "r - поворот", 66, 798);
+            TextRender(renderer, font, "Enter - разместить", 66, 870);
         }
         // Отрисовка счёта при игре
         if (Play == true) {
-            SDL_Color textColor = { 0, 0, 0, 255 };
-            SDL_Surface* textSurface = TTF_RenderUTF8_Solid(font, std::to_string(score).c_str(), textColor);
-            SDL_Texture* textTexture = SDL_CreateTextureFromSurface(renderer, textSurface);
-            int textWidth, textHeight;
-            SDL_QueryTexture(textTexture, nullptr, nullptr, &textWidth, &textHeight);
-            SDL_Rect textRect = { WINDOW_WIDTH - 450, 198, textWidth, textHeight };
-            SDL_RenderCopy(renderer, textTexture, nullptr, &textRect);
-            SDL_FreeSurface(textSurface);
-            SDL_DestroyTexture(textTexture);
+            TextRender(renderer, font, std::to_string(score).c_str(), WINDOW_WIDTH - 450, 198);
         }
         // Вывод текста при игре
         if (Play == true)
         {
-            SDL_Color textColor = { 0, 0, 0, 255 };
-            // Первая строчка
-            {
-                SDL_Surface* textSurface = TTF_RenderUTF8_Solid(font, "w/a/s/d - передвижение", textColor);
-                SDL_Texture* textTexture = SDL_CreateTextureFromSurface(renderer, textSurface);
-                int textWidth, textHeight;
-                SDL_QueryTexture(textTexture, nullptr, nullptr, &textWidth, &textHeight);
-                SDL_Rect textRect = { 66, 726, textWidth, textHeight };
-                SDL_RenderCopy(renderer, textTexture, nullptr, &textRect);
-                SDL_FreeSurface(textSurface);
-                SDL_DestroyTexture(textTexture); }
-            // Вторая строчка
-            {
-                SDL_Surface* textSurface = TTF_RenderUTF8_Solid(font, "Enter - выстрел", textColor);
-                SDL_Texture* textTexture = SDL_CreateTextureFromSurface(renderer, textSurface);
-                int textWidth, textHeight;
-                SDL_QueryTexture(textTexture, nullptr, nullptr, &textWidth, &textHeight);
-                SDL_Rect textRect = { 66, 798, textWidth, textHeight };
-                SDL_RenderCopy(renderer, textTexture, nullptr, &textRect);
-                SDL_FreeSurface(textSurface);
-                SDL_DestroyTexture(textTexture); }
+            TextRender(renderer, font, "w/a/s/d - передвижение", 66, 726);
+            TextRender(renderer, font, "Enter - выстрел", 66, 798);
         }
         // Отрисовка счёта при выигрыше
         if (Win == true) {
-            SDL_Color textColor = { 0, 0, 0, 255 };
-            SDL_Surface* textSurface = TTF_RenderUTF8_Solid(font, std::to_string(score).c_str(), textColor);
-            SDL_Texture* textTexture = SDL_CreateTextureFromSurface(renderer, textSurface);
-            int textWidth, textHeight;
-            SDL_QueryTexture(textTexture, nullptr, nullptr, &textWidth, &textHeight);
-            SDL_Rect textRect = { 582, 594, textWidth, textHeight };
-            SDL_RenderCopy(renderer, textTexture, nullptr, &textRect);
-            SDL_FreeSurface(textSurface);
-            SDL_DestroyTexture(textTexture);
+            TextRender(renderer, font, std::to_string(score).c_str(), 582, 594);
         }
         // Отрисовка счёта при проигрыше
         if (Loose == true) {
-            SDL_Color textColor = { 0, 0, 0, 255 };
-            SDL_Surface* textSurface = TTF_RenderUTF8_Solid(font, std::to_string(score).c_str(), textColor);
-            SDL_Texture* textTexture = SDL_CreateTextureFromSurface(renderer, textSurface);
-            int textWidth, textHeight;
-            SDL_QueryTexture(textTexture, nullptr, nullptr, &textWidth, &textHeight);
-            SDL_Rect textRect = { 306, 594, textWidth, textHeight };
-            SDL_RenderCopy(renderer, textTexture, nullptr, &textRect);
-            SDL_FreeSurface(textSurface);
-            SDL_DestroyTexture(textTexture);
+            TextRender(renderer, font, std::to_string(score).c_str(), 306, 594);
         }
+        // Отрисовка имени при выигрыше
+        if (Win == true) {
+            TextRender(renderer, font, inputText.c_str(), 792, 666);
+        }
+        // Отрисовка имени при проигрыше
+        if (Loose == true) {
+            TextRender(renderer, font, inputText.c_str(), 522, 666);
+        }
+
+
         // Рендер размещённых кораблей
         if (Placement) {
             for (int i = 0; i < currentShip; ++i) {
@@ -735,6 +710,7 @@ int main(int argc, char* argv[]) {
                 Play = false;
                 Player_attack = false;
                 Enemy_attack = false;
+                inputText = "";
             }
         }
     }
