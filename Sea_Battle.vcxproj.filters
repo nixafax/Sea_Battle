@@ -35,4 +35,9 @@
       <Filter>Исходные файлы</Filter>
     </Font>
   </ItemGroup>
+  <ItemGroup>
+    <Text Include="LB.txt">
+      <Filter>Исходные файлы</Filter>
+    </Text>
+  </ItemGroup>
 </Project>
