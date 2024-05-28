@@ -137,6 +137,8 @@
   </ItemGroup>
   <ItemGroup>
     <Image Include="BG.png" />
+    <Image Include="BG_Loose.png" />
+    <Image Include="BG_Win.png" />
   </ItemGroup>
   <ItemGroup>
     <Font Include="Minecraft Rus NEW.otf" />

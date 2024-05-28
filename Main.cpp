@@ -152,7 +152,24 @@ SDL_Texture* loadBackground(SDL_Renderer* renderer) {
     }
     return background;
 }
-
+// Загрузка экрана победы
+SDL_Texture* loadBackground_Win(SDL_Renderer* renderer) {
+    SDL_Texture* background_win = IMG_LoadTexture(renderer, "BG_Win.png");
+    if (background_win == nullptr) {
+        std::cerr << "Failed to load background_win image: " << IMG_GetError() << std::endl;
+        return nullptr;
+    }
+    return background_win;
+}
+// Загрузка экрана поражения
+SDL_Texture* loadBackground_Loose(SDL_Renderer* renderer) {
+    SDL_Texture* background_loose = IMG_LoadTexture(renderer, "BG_Loose.png");
+    if (background_loose == nullptr) {
+        std::cerr << "Failed to load background_loose image: " << IMG_GetError() << std::endl;
+        return nullptr;
+    }
+    return background_loose;
+}
 //Для размещения
 const int CELL_SIZE = 54;
 const int CELL_SPACING = 6;
@@ -239,7 +256,32 @@ void fillGridWithShips(std::vector<std::vector<int>>& grid) {
         }
     }
 }
-
+// Отрисовка поля игрока
+void Player_fild_render(SDL_Renderer* renderer, const std::vector<std::vector<int>>& grid) {
+    SDL_SetRenderDrawColor(renderer, 255, 255, 255, SDL_ALPHA_OPAQUE);
+    for (int i = 0; i < 10; ++i) {
+        for (int j = 0; j < 10; ++j) {
+            int x = GRID_OFFSET_X + i * (CELL_SIZE + CELL_SPACING);
+            int y = GRID_OFFSET_Y + j * (CELL_SIZE + CELL_SPACING);
+            SDL_Rect cell = { x, y, CELL_SIZE, CELL_SIZE };
+            if (grid[i][j] == -1) {
+                SDL_SetRenderDrawColor(renderer, 135, 206, 250, SDL_ALPHA_OPAQUE); // Голубой для промаха
+            }
+            else if (grid[i][j] == -2) {
+                SDL_SetRenderDrawColor(renderer, 0, 18, 129, SDL_ALPHA_OPAQUE); // Синий для попадания
+            }
+            else if (grid[i][j] == 0) {
+                SDL_SetRenderDrawColor(renderer, 183, 180, 186, SDL_ALPHA_OPAQUE); // Для пустой клетки
+            }
+            else if (grid[i][j] > 0) {
+                SDL_SetRenderDrawColor(renderer, 91, 110, 225, SDL_ALPHA_OPAQUE); // Для целого корабля
+            }
+            SDL_RenderFillRect(renderer, &cell);
+            //SDL_SetRenderDrawColor(renderer, 0, 0, 0, SDL_ALPHA_OPAQUE);
+            //SDL_RenderDrawRect(renderer, &cell);
+        }
+    }
+}
 // Стрельба по пративнику
 void renderCursor(SDL_Renderer* renderer, const std::vector<std::vector<int>>& grid, int cursorX, int cursorY) {
     SDL_SetRenderDrawColor(renderer, 255, 255, 255, SDL_ALPHA_OPAQUE);
@@ -252,14 +294,14 @@ void renderCursor(SDL_Renderer* renderer, const std::vector<std::vector<int>>& g
                 SDL_SetRenderDrawColor(renderer, 135, 206, 250, SDL_ALPHA_OPAQUE); // Голубой для промаха
             }
             else if (grid[i][j] == -2) {
-                SDL_SetRenderDrawColor(renderer, 0, 0, 255, SDL_ALPHA_OPAQUE); // Синий для попадания
+                SDL_SetRenderDrawColor(renderer, 0, 18, 129, SDL_ALPHA_OPAQUE); // Синий для попадания
             }
             else {
                 SDL_SetRenderDrawColor(renderer, 183, 180, 186, SDL_ALPHA_OPAQUE); // Для пустой клетки
             }
             SDL_RenderFillRect(renderer, &cell);
-            SDL_SetRenderDrawColor(renderer, 0, 0, 0, SDL_ALPHA_OPAQUE);
-            SDL_RenderDrawRect(renderer, &cell);
+            //SDL_SetRenderDrawColor(renderer, 0, 0, 0, SDL_ALPHA_OPAQUE);
+            //SDL_RenderDrawRect(renderer, &cell);
         }
     }
 
@@ -271,13 +313,69 @@ void renderCursor(SDL_Renderer* renderer, const std::vector<std::vector<int>>& g
     SDL_RenderDrawRect(renderer, &cursorRect);
 }
 
-void handleShooting(std::vector<std::vector<int>>& grid, int cursorX, int cursorY) {
+bool handleShooting(std::vector<std::vector<int>>& grid, int cursorX, int cursorY) {
     if (grid[cursorX][cursorY] > 0) {
         grid[cursorX][cursorY] = -2; // Попадание
+        return true; 
     }
     else {
         grid[cursorX][cursorY] = -1; // Промах
+        return false;
     }
+}
+
+// Атака апонента
+bool EnemyAttack(std::vector<std::vector<int>>& grid) {
+    std::srand(static_cast<unsigned int>(std::time(nullptr)));
+
+    int rows = grid.size();
+    int cols = grid[0].size();
+
+    bool found = false;
+    while (!found) {
+        int x = std::rand() % rows;
+        int y = std::rand() % cols;
+
+        if (grid[x][y] != -1 && grid[x][y] != -2) {
+            if (grid[x][y] == 0) {
+                grid[x][y] = -1; // Промах
+                return false;
+            }
+            else if (grid[x][y] >= 1 && grid[x][y] <= 10) {
+                grid[x][y] = -2; // Попадание
+                return true;
+            }
+            found = true;
+        }
+    }
+}
+
+// Изменение счёта
+int ChangScore(std::vector<std::vector<int>>& grid, std::vector<std::vector<int>>& enemy_field) {
+    int score = 0;
+    for (int i = 0; i <= 9; i++) {
+        for (int j = 0; j <= 9; j++) {
+            if (grid[i][j] == -2) {
+                score = score - 10;
+            }
+            if (enemy_field[i][j] == -2) {
+                score = score + 10;
+            }
+        }
+    }
+    return score;
+}
+// Проверка на целые корабли
+bool CheckShip(std::vector<std::vector<int>>& grid) {
+    bool existence = false;
+    for (int i = 0; i <= 9; i++) {
+        for (int j = 0; j <= 9; j++) {
+            if (grid[i][j] > 0) {
+                existence = true;
+            }
+        }
+    }
+    return existence;
 }
 
 int main(int argc, char* argv[]) {
@@ -302,6 +400,18 @@ int main(int argc, char* argv[]) {
         return 1;
     }
 
+    // Загрузка экрана победы
+    SDL_Texture* background_win = loadBackground_Win(renderer);
+    if (background_win == nullptr) {
+        return 1;
+    }
+
+    // Загрузка экрана поражения
+    SDL_Texture* background_loose = loadBackground_Loose(renderer);
+    if (background_loose == nullptr) {
+        return 1;
+    }
+
     // Инициализация SDL_ttf
     TTF_Font* font = TTF_OpenFont("Minecraft Rus NEW.otf", 48);
     if (font == nullptr) {
@@ -315,11 +425,15 @@ int main(int argc, char* argv[]) {
         return 1;
     }
 
-    int score = 100000;
+    int score = 100;
+    int number_of_shots = 100;
+    bool Pause = false;
     bool Placement = true;
     bool Play = false;
     bool Player_attack = false;
     bool Enemy_attack = false;
+    bool Win = false;
+    bool Loose = false;
     int currentShip = 0;
 
     //std::vector<Ship> ships = { Ship(4), Ship(3), Ship(3), Ship(2), Ship(2), Ship(2), Ship(1), Ship(1), Ship(1), Ship(1) };
@@ -385,9 +499,32 @@ int main(int argc, char* argv[]) {
                         if (cursorX < 9) cursorX++;
                         break;
                     case SDLK_RETURN:
-                        handleShooting(enemy_field, cursorX, cursorY);
-                        printGrid(enemy_field);
+                        if (handleShooting(enemy_field, cursorX, cursorY)) {
+                            printGrid(enemy_field);
+                            /*number_of_shots--;
+                            score = number_of_shots + ChangScore(grid, enemy_field);
+                            break;*/
+                        }
+                        else {
+                            printGrid(enemy_field);
+                            Player_attack = false;
+                            Enemy_attack = true;
+                        }
+                        number_of_shots--;
+                        score = number_of_shots + ChangScore(grid, enemy_field);
+                        if (CheckShip(enemy_field) == false) {
+                            Win = true;
+                            Play = false;
+                            Player_attack = false;
+                            Enemy_attack = false;
+                        }
                         break;
+                        //score = ChangScore(grid, enemy_field);
+                        /*printGrid(enemy_field);
+                        Player_attack = false;
+                        Enemy_attack = true;
+                        break;*/
+
                     }
                 }
             }
@@ -396,9 +533,23 @@ int main(int argc, char* argv[]) {
         SDL_RenderClear(renderer);
 
         // Отрисовка фонового изображения
-        SDL_RenderCopy(renderer, background, nullptr, nullptr);
-
-        // Отрисовка текста
+        {
+            if (Win) {
+                SDL_RenderCopy(renderer, background_win, nullptr, nullptr);
+                //std::cout << "Win" << std::endl;
+            }
+            else if (Loose) {
+                SDL_RenderCopy(renderer, background_loose, nullptr, nullptr);
+                //std::cout << "Loose" << std::endl;
+            }
+            else {
+                SDL_RenderCopy(renderer, background, nullptr, nullptr);
+                //std::cout << "Play" << std::endl;
+            }
+        }
+        //SDL_RenderCopy(renderer, background, nullptr, nullptr);
+        // Отрисовка счёта при игре
+        if (Play == true) {
         SDL_Color textColor = { 0, 0, 0, 255 };
         SDL_Surface* textSurface = TTF_RenderUTF8_Solid(font, std::to_string(score).c_str(), textColor);
         SDL_Texture* textTexture = SDL_CreateTextureFromSurface(renderer, textSurface);
@@ -408,67 +559,73 @@ int main(int argc, char* argv[]) {
         SDL_RenderCopy(renderer, textTexture, nullptr, &textRect);
         SDL_FreeSurface(textSurface);
         SDL_DestroyTexture(textTexture);
-
+        }
         // Вывод текста при размещении
         if (Placement == true)
         {
+            SDL_Color textColor = { 0, 0, 0, 255 };
             // Первая строчка
             {
-            textSurface = TTF_RenderUTF8_Solid(font, "w/a/s/d - передвижение", textColor);
-            textTexture = SDL_CreateTextureFromSurface(renderer, textSurface);
+            SDL_Surface* textSurface = TTF_RenderUTF8_Solid(font, "w/a/s/d - передвижение", textColor);
+            SDL_Texture* textTexture = SDL_CreateTextureFromSurface(renderer, textSurface);
+            int textWidth, textHeight;
             SDL_QueryTexture(textTexture, nullptr, nullptr, &textWidth, &textHeight);
-            textRect = { 66, 726, textWidth, textHeight };
+            SDL_Rect textRect = { 66, 726, textWidth, textHeight };
             SDL_RenderCopy(renderer, textTexture, nullptr, &textRect);
             SDL_FreeSurface(textSurface);
             SDL_DestroyTexture(textTexture); }
             // Вторая строчка
             {
-            textSurface = TTF_RenderUTF8_Solid(font, "r - поворот", textColor);
-            textTexture = SDL_CreateTextureFromSurface(renderer, textSurface);
+            SDL_Surface* textSurface = TTF_RenderUTF8_Solid(font, "r - поворот", textColor);
+            SDL_Texture* textTexture = SDL_CreateTextureFromSurface(renderer, textSurface);
+            int textWidth, textHeight;
             SDL_QueryTexture(textTexture, nullptr, nullptr, &textWidth, &textHeight);
-            textRect = { 66, 798, textWidth, textHeight };
+            SDL_Rect textRect = { 66, 798, textWidth, textHeight };
             SDL_RenderCopy(renderer, textTexture, nullptr, &textRect);
             SDL_FreeSurface(textSurface);
             SDL_DestroyTexture(textTexture); }
             // Третья строчка
             {
-            textSurface = TTF_RenderUTF8_Solid(font, "Enter - разместить", textColor);
-            textTexture = SDL_CreateTextureFromSurface(renderer, textSurface);
+            SDL_Surface* textSurface = TTF_RenderUTF8_Solid(font, "Enter - разместить", textColor);
+            SDL_Texture* textTexture = SDL_CreateTextureFromSurface(renderer, textSurface);
+            int textWidth, textHeight;
             SDL_QueryTexture(textTexture, nullptr, nullptr, &textWidth, &textHeight);
-            textRect = { 66, 870, textWidth, textHeight };
+            SDL_Rect textRect = { 66, 870, textWidth, textHeight };
             SDL_RenderCopy(renderer, textTexture, nullptr, &textRect);
             SDL_FreeSurface(textSurface);
             SDL_DestroyTexture(textTexture); }
         }
-
         // Вывод текста при игре
         if (Play == true)
         {
+            SDL_Color textColor = { 0, 0, 0, 255 };
             // Первая строчка
             {
-                textSurface = TTF_RenderUTF8_Solid(font, "w/a/s/d - передвижение", textColor);
-                textTexture = SDL_CreateTextureFromSurface(renderer, textSurface);
+                SDL_Surface* textSurface = TTF_RenderUTF8_Solid(font, "w/a/s/d - передвижение", textColor);
+                SDL_Texture* textTexture = SDL_CreateTextureFromSurface(renderer, textSurface);
+                int textWidth, textHeight;
                 SDL_QueryTexture(textTexture, nullptr, nullptr, &textWidth, &textHeight);
-                textRect = { 66, 726, textWidth, textHeight };
+                SDL_Rect textRect = { 66, 726, textWidth, textHeight };
                 SDL_RenderCopy(renderer, textTexture, nullptr, &textRect);
                 SDL_FreeSurface(textSurface);
                 SDL_DestroyTexture(textTexture); }
             // Вторая строчка
             {
-                textSurface = TTF_RenderUTF8_Solid(font, "Enter - выстрел", textColor);
-                textTexture = SDL_CreateTextureFromSurface(renderer, textSurface);
+                SDL_Surface* textSurface = TTF_RenderUTF8_Solid(font, "Enter - выстрел", textColor);
+                SDL_Texture* textTexture = SDL_CreateTextureFromSurface(renderer, textSurface);
+                int textWidth, textHeight;
                 SDL_QueryTexture(textTexture, nullptr, nullptr, &textWidth, &textHeight);
-                textRect = { 66, 798, textWidth, textHeight };
+                SDL_Rect textRect = { 66, 798, textWidth, textHeight };
                 SDL_RenderCopy(renderer, textTexture, nullptr, &textRect);
                 SDL_FreeSurface(textSurface);
                 SDL_DestroyTexture(textTexture); }
         }
-
         // Рендер размещённых кораблей
-        for (int i = 0; i < currentShip; ++i) {
-            renderShip(renderer, ships[i]);
+        if (Placement) {
+            for (int i = 0; i < currentShip; ++i) {
+                renderShip(renderer, ships[i]);
+            }
         }
-
         // Рендер кораблей, которые щас размещаются и изменение статуса
         if (currentShip < ships.size()) {
             renderShip(renderer, ships[currentShip]);
@@ -482,14 +639,63 @@ int main(int argc, char* argv[]) {
             fillGridWithShips(enemy_field);
             printGrid(enemy_field);
         }
+        // Рендер во время игры
         else if (Play == true) {
             renderCursor(renderer, enemy_field, cursorX, cursorY);
             surroundSunkShips(enemy_field);
-
+            Player_fild_render(renderer, grid);
         }
-        
+        //if (Pause) {
+        //    SDL_Delay(1000);
+        //    Pause = false;
+        //}
+        //// Атака опанента
+        //if (Enemy_attack) {
+        //    std::cout << "tut budet atacka" << std::endl;
+        //    if (EnemyAttack(grid)) {
+        //        surroundSunkShips(grid);
+        //        Pause = true;
+        //    }
+        //    else {
+        //        surroundSunkShips(grid);
+        //        Player_attack = true;
+        //        Enemy_attack = false;
+        //    }
+        //}
+
         // Обновление экрана
         SDL_RenderPresent(renderer);
+
+        if (Pause) {
+            SDL_Delay(500);
+            Pause = false;
+        }
+        // Атака опанента
+        if (Enemy_attack) {
+            std::cout << "tut budet atacka" << std::endl;
+            if (EnemyAttack(grid)) {
+                surroundSunkShips(grid);
+                Pause = true;
+            }
+            else {
+                surroundSunkShips(grid);
+                Player_attack = true;
+                Enemy_attack = false;
+            }
+            score = number_of_shots + ChangScore(grid, enemy_field);
+            if (CheckShip(grid) == false) {
+                Loose = true;
+                Play = false;
+                Player_attack = false;
+                Enemy_attack = false;
+            }
+        }
+        /*if (Win) {
+            std::cout << "Win" << std::endl;
+        }
+        if (Loose) {
+            std::cout << "Loose" << std::endl;
+        }*/
     }
 
     // Очистка ресурсов
