@@ -10,6 +10,8 @@
 #include <fstream>
 #include <algorithm>
 #include <sstream>
+#include <locale>
+#include <codecvt>
 
 const int WINDOW_WIDTH = 1920;
 const int WINDOW_HEIGHT = 1080;
@@ -27,6 +29,9 @@ std::vector<LineData> readFile(const std::string& filePath) {
     std::string line;
 
     if (file.is_open()) {
+
+        file.imbue(std::locale(file.getloc(), new std::codecvt_utf8<char>));
+
         while (std::getline(file, line)) {
             std::istringstream iss(line);
             std::string word;
@@ -58,6 +63,9 @@ void writeFile(const std::string& filePath, const std::vector<LineData>& lines) 
     std::ofstream file(filePath);
 
     if (file.is_open()) {
+
+        file.imbue(std::locale(file.getloc(), new std::codecvt_utf8<char>));
+
         for (const auto& line : lines) {
             file << line.text << " " << line.number << std::endl;
         }
@@ -70,6 +78,7 @@ void writeFile(const std::string& filePath, const std::vector<LineData>& lines) 
 // Главная функция для сортировки строк в файле по числам в порядке убывания
 void sortFileByNumbersDescending(const std::string& filePath) {
     // Чтение файла
+
     std::vector<LineData> lines = readFile(filePath);
 
     // Сортировка вектора по числам в порядке убывания
@@ -462,9 +471,11 @@ void ArrowReset(std::vector<std::vector<int>>& grid) {
 
 // Сохранение рекорда в файл
 void saveToFile(const std::string& input, int score) {
+
     std::ofstream outFile("LB.txt", std::ios::app);
     if (outFile.is_open()) {
-        outFile << input << "   " << score << "\n";
+
+        outFile << input << " " << score << "\n";
         outFile.close();
     }
     else {
@@ -504,7 +515,7 @@ void TextRender(SDL_Renderer* renderer, TTF_Font* font, const std::string& text,
 void LBRender(SDL_Renderer* renderer, TTF_Font* font, const std::vector<std::string>& lines) {
     SDL_Color textColor = { 0, 0, 0, 255 };
     int yOffset = 258;
-    int numberOfIterations = 20;
+    int numberOfIterations = 12;
     numberOfIterations = std::min(numberOfIterations, static_cast<int>(lines.size()));
 
     for (int i = 0; i < numberOfIterations; ++i) {
@@ -596,12 +607,6 @@ int main(int argc, char* argv[]) {
     
     std::vector<std::vector<int>> grid(10, std::vector<int>(10, 0));
     std::vector<std::vector<int>> enemy_field(10, std::vector<int>(10, 0));
-
-    /*Placement = false;
-    Win = true;
-    Play = false;
-    Player_attack = false;
-    Enemy_attack = false;*/
 
     // Основной игровой цикл
     bool running = true;
@@ -695,7 +700,6 @@ int main(int argc, char* argv[]) {
                     }
                     if (event.key.keysym.sym == SDLK_TAB) {
                         showText = !showText;
-                        std::cout << showText << std::endl;
                     }
                     if (event.key.keysym.sym == SDLK_LCTRL || event.key.keysym.sym == SDLK_RCTRL) {
                         score = 100;
