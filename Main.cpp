@@ -8,9 +8,80 @@
 #include <ctime>
 #include <queue>
 #include <fstream>
+#include <algorithm>
+#include <sstream>
 
 const int WINDOW_WIDTH = 1920;
 const int WINDOW_HEIGHT = 1080;
+
+//-----------// Функции, что бы сортировать файл с таблицей лидеров
+
+struct LineData {
+    std::string text;
+    int number;
+};
+// Функция для чтения файла и получения вектора LineData
+std::vector<LineData> readFile(const std::string& filePath) {
+    std::ifstream file(filePath);
+    std::vector<LineData> lines;
+    std::string line;
+
+    if (file.is_open()) {
+        while (std::getline(file, line)) {
+            std::istringstream iss(line);
+            std::string word;
+            std::string text;
+            int number;
+
+            // Извлекаем слова до последнего числа
+            while (iss >> word) {
+                if (std::isdigit(word[0])) {
+                    number = std::stoi(word);
+                    break;
+                }
+                else {
+                    if (!text.empty()) text += " ";
+                    text += word;
+                }
+            }
+            lines.push_back({ text, number });
+        }
+        file.close();
+    }
+    else {
+        std::cerr << "Unable to open file: " << filePath << std::endl;
+    }
+    return lines;
+}
+// Функция для записи вектора LineData обратно в файл
+void writeFile(const std::string& filePath, const std::vector<LineData>& lines) {
+    std::ofstream file(filePath);
+
+    if (file.is_open()) {
+        for (const auto& line : lines) {
+            file << line.text << " " << line.number << std::endl;
+        }
+        file.close();
+    }
+    else {
+        std::cerr << "Unable to open file: " << filePath << std::endl;
+    }
+}
+// Главная функция для сортировки строк в файле по числам в порядке убывания
+void sortFileByNumbersDescending(const std::string& filePath) {
+    // Чтение файла
+    std::vector<LineData> lines = readFile(filePath);
+
+    // Сортировка вектора по числам в порядке убывания
+    std::sort(lines.begin(), lines.end(), [](const LineData& a, const LineData& b) {
+        return b.number < a.number;
+        });
+
+    // Запись отсортированных строк обратно в файл
+    writeFile(filePath, lines);
+}
+
+//-----------// Функции, что бы сортировать файл с таблицей лидеров
 
 // Вывод двумерного массива
 void printGrid(const std::vector<std::vector<int>>& grid) {
@@ -23,7 +94,6 @@ void printGrid(const std::vector<std::vector<int>>& grid) {
     std::cout << "--------------------------" << std::endl;
 }
 
-// Проверка на потапление
 // Проверяет, есть ли значения от 1 до 10 вокруг группы ячеек с -2
 bool isShipAdjacent(const std::vector<std::vector<int>>& grid, const std::vector<std::pair<int, int>>& shipCells) {
     std::vector<std::pair<int, int>> directions = { {1, 0}, {-1, 0}, {0, 1}, {0, -1}, {1, 1}, {-1, -1}, {1, -1}, {-1, 1} };
@@ -42,7 +112,6 @@ bool isShipAdjacent(const std::vector<std::vector<int>>& grid, const std::vector
     }
     return false;
 }
-
 // Заполняет пустые ячейки вокруг группы ячеек с -2 значением -1
 void fillSurroundings(std::vector<std::vector<int>>& grid, const std::vector<std::pair<int, int>>& shipCells) {
     std::vector<std::pair<int, int>> directions = { {1, 0}, {-1, 0}, {0, 1}, {0, -1}, {1, 1}, {-1, -1}, {1, -1}, {-1, 1} };
@@ -60,7 +129,6 @@ void fillSurroundings(std::vector<std::vector<int>>& grid, const std::vector<std
         }
     }
 }
-
 // Функция для поиска всех групп ячеек с -2 и проверки их окружения
 void surroundSunkShips(std::vector<std::vector<int>>& grid) {
     int rows = grid.size();
@@ -101,6 +169,7 @@ void surroundSunkShips(std::vector<std::vector<int>>& grid) {
     }
 }
 
+
 // Инициализация SDL и SDL_image
 bool initSDL() {
     if (SDL_Init(SDL_INIT_VIDEO) < 0) {
@@ -123,7 +192,6 @@ bool initSDL() {
 
     return true;
 }
-
 // Создание окна и рендерера
 SDL_Window* createWindow() {
     SDL_Window* window = SDL_CreateWindow("My Game", SDL_WINDOWPOS_UNDEFINED, SDL_WINDOWPOS_UNDEFINED, WINDOW_WIDTH, WINDOW_HEIGHT, SDL_WINDOW_SHOWN);
@@ -133,7 +201,6 @@ SDL_Window* createWindow() {
     }
     return window;
 }
-
 SDL_Renderer* createRenderer(SDL_Window* window) {
     SDL_Renderer* renderer = SDL_CreateRenderer(window, -1, SDL_RENDERER_ACCELERATED);
     if (renderer == nullptr) {
@@ -143,7 +210,6 @@ SDL_Renderer* createRenderer(SDL_Window* window) {
     }
     return renderer;
 }
-
 // Загрузка фонового изображения
 SDL_Texture* loadBackground(SDL_Renderer* renderer) {
     SDL_Texture* background = IMG_LoadTexture(renderer, "BG.png");
@@ -171,6 +237,15 @@ SDL_Texture* loadBackground_Loose(SDL_Renderer* renderer) {
     }
     return background_loose;
 }
+// Загрузка экрана лидер борда
+SDL_Texture* loadBackground_LB(SDL_Renderer* renderer) {
+    SDL_Texture* background_lb = IMG_LoadTexture(renderer, "BG_LB.png");
+    if (background_lb == nullptr) {
+        std::cerr << "Failed to load background_lb image: " << IMG_GetError() << std::endl;
+        return nullptr;
+    }
+    return background_lb;
+}
 //Для размещения
 const int CELL_SIZE = 54;
 const int CELL_SPACING = 6;
@@ -187,19 +262,7 @@ struct Ship {
         horizontal = !horizontal;
     }
 };
-
-//void renderGrid(SDL_Renderer* renderer) {
-//    SDL_SetRenderDrawColor(renderer, 255, 255, 255, SDL_ALPHA_OPAQUE);
-//    for (int i = 0; i < 10; ++i) {
-//        for (int j = 0; j < 10; ++j) {
-//            int x = GRID_OFFSET_X + i * (CELL_SIZE + CELL_SPACING);
-//            int y = GRID_OFFSET_Y + j * (CELL_SIZE + CELL_SPACING);
-//            SDL_Rect cell = { x, y, CELL_SIZE, CELL_SIZE };
-//            SDL_RenderDrawRect(renderer, &cell);
-//        }
-//    }
-//}
-
+// Отрисовка кораблей
 void renderShip(SDL_Renderer* renderer, const Ship& ship) {
     SDL_SetRenderDrawColor(renderer, 91, 110, 225, SDL_ALPHA_OPAQUE);
     for (int i = 0; i < ship.length; ++i) {
@@ -209,7 +272,7 @@ void renderShip(SDL_Renderer* renderer, const Ship& ship) {
         SDL_RenderFillRect(renderer, &cell);
     }
 }
-
+// Проверка возможности размещения корабля
 bool isValidPlacement(const Ship& ship, const std::vector<std::vector<int>>& grid) {
     for (int i = 0; i < ship.length; ++i) {
         int x = ship.x + (ship.horizontal ? i : 0);
@@ -225,7 +288,7 @@ bool isValidPlacement(const Ship& ship, const std::vector<std::vector<int>>& gri
     }
     return true;
 }
-
+// Размещение корабля
 void placeShip(Ship& ship, std::vector<std::vector<int>>& grid, int shipID) {
     for (int i = 0; i < ship.length; ++i) {
         int x = ship.x + (ship.horizontal ? i : 0);
@@ -283,6 +346,7 @@ void Player_fild_render(SDL_Renderer* renderer, const std::vector<std::vector<in
         }
     }
 }
+
 // Стрельба по пративнику
 void renderCursor(SDL_Renderer* renderer, const std::vector<std::vector<int>>& grid, int cursorX, int cursorY) {
     SDL_SetRenderDrawColor(renderer, 255, 255, 255, SDL_ALPHA_OPAQUE);
@@ -333,7 +397,6 @@ bool CheckHandleShooting(std::vector<std::vector<int>>& grid, int cursorX, int c
         return true;
     }
 }
-
 // Атака апонента
 bool EnemyAttack(std::vector<std::vector<int>>& grid) {
     std::srand(static_cast<unsigned int>(std::time(nullptr)));
@@ -388,6 +451,7 @@ bool CheckShip(std::vector<std::vector<int>>& grid) {
     return existence;
 }
 
+// Обнуления двумерного массива
 void ArrowReset(std::vector<std::vector<int>>& grid) {
     for (int i = 0; i < 10; i++) {
         for (int j = 0; j < 10; j++) {
@@ -396,17 +460,35 @@ void ArrowReset(std::vector<std::vector<int>>& grid) {
     }
 }
 
+// Сохранение рекорда в файл
 void saveToFile(const std::string& input, int score) {
     std::ofstream outFile("LB.txt", std::ios::app);
     if (outFile.is_open()) {
-        outFile << input << " " << score << "\n";
+        outFile << input << "   " << score << "\n";
         outFile.close();
     }
     else {
         std::cerr << "Unable to open file for writing." << std::endl;
     }
 }
+// Загрузка значения из файла
+std::vector<std::string> loadTextFromFile(const std::string& filePath) {
+    std::vector<std::string> lines;
+    std::ifstream file(filePath);
+    if (file.is_open()) {
+        std::string line;
+        while (std::getline(file, line)) {
+            lines.push_back(line);
+        }
+        file.close();
+    }
+    else {
+        std::cerr << "Unable to open file: " << filePath << std::endl;
+    }
+    return lines;
+}
 
+// Отрисовка текста
 void TextRender(SDL_Renderer* renderer, TTF_Font* font, const std::string& text, int x, int y) {
     SDL_Color textColor = { 0, 0, 0, 255 };
     SDL_Surface* textSurface = TTF_RenderUTF8_Solid(font, text.c_str(), textColor);
@@ -418,13 +500,37 @@ void TextRender(SDL_Renderer* renderer, TTF_Font* font, const std::string& text,
     SDL_FreeSurface(textSurface);
     SDL_DestroyTexture(textTexture);
 }
+// Отрисовка таблицы лидеров
+void LBRender(SDL_Renderer* renderer, TTF_Font* font, const std::vector<std::string>& lines) {
+    SDL_Color textColor = { 0, 0, 0, 255 };
+    int yOffset = 258;
+    int numberOfIterations = 20;
+    numberOfIterations = std::min(numberOfIterations, static_cast<int>(lines.size()));
+
+    for (int i = 0; i < numberOfIterations; ++i) {
+        SDL_Surface* textSurface = TTF_RenderUTF8_Solid(font, lines[i].c_str(), textColor);
+        SDL_Texture* textTexture = SDL_CreateTextureFromSurface(renderer, textSurface);
+        int textWidth, textHeight;
+        SDL_QueryTexture(textTexture, nullptr, nullptr, &textWidth, &textHeight);
+        SDL_Rect textRect;
+        textRect.x = 198;
+        textRect.y = yOffset;
+        textRect.w = textSurface->w;
+        textRect.h = textSurface->h;
+
+        SDL_RenderCopy(renderer, textTexture, nullptr, &textRect);
+        SDL_FreeSurface(textSurface);
+        SDL_DestroyTexture(textTexture);
+
+        yOffset += 59;
+    }
+}
 
 int main(int argc, char* argv[]) {
     // Инициализация SDL и SDL_image
     if (!initSDL()) {
         return 1;
     }
-
     // Создание окна и рендерера
     SDL_Window* window = createWindow();
     if (window == nullptr) {
@@ -434,25 +540,26 @@ int main(int argc, char* argv[]) {
     if (renderer == nullptr) {
         return 1;
     }
-
     // Загрузка фонового изображения
     SDL_Texture* background = loadBackground(renderer);
     if (background == nullptr) {
         return 1;
     }
-
     // Загрузка экрана победы
     SDL_Texture* background_win = loadBackground_Win(renderer);
     if (background_win == nullptr) {
         return 1;
     }
-
     // Загрузка экрана поражения
     SDL_Texture* background_loose = loadBackground_Loose(renderer);
     if (background_loose == nullptr) {
         return 1;
     }
-
+    // Загрузка экрана лидерборда
+    SDL_Texture* background_lb = loadBackground_LB(renderer);
+    if (background_lb == nullptr) {
+        return 1;
+    }
     // Инициализация SDL_ttf
     TTF_Font* font = TTF_OpenFont("Minecraft Rus NEW.otf", 48);
     if (font == nullptr) {
@@ -475,16 +582,26 @@ int main(int argc, char* argv[]) {
     bool Enemy_attack = false;
     bool Win = false;
     bool Loose = false;
+    bool showText = false;
     int currentShip = 0;
     int cursorX = 0;
     int cursorY = 0;
     std::string inputText = "";
 
-    //std::vector<Ship> ships = { Ship(4), Ship(3), Ship(3), Ship(2), Ship(2), Ship(2), Ship(1), Ship(1), Ship(1), Ship(1) };
-    std::vector<Ship> ships = { Ship(1), Ship(1) };
-    std::vector<std::vector<int>> grid(10, std::vector<int>(10, 0));
+    std::string filePath = "LB.txt";
+    sortFileByNumbersDescending(filePath);
+    std::vector<std::string> lines = loadTextFromFile("LB.txt");
 
+    std::vector<Ship> ships = { Ship(4), Ship(3), Ship(3), Ship(2), Ship(2), Ship(2), Ship(1), Ship(1), Ship(1), Ship(1) };
+    
+    std::vector<std::vector<int>> grid(10, std::vector<int>(10, 0));
     std::vector<std::vector<int>> enemy_field(10, std::vector<int>(10, 0));
+
+    /*Placement = false;
+    Win = true;
+    Play = false;
+    Player_attack = false;
+    Enemy_attack = false;*/
 
     // Основной игровой цикл
     bool running = true;
@@ -495,7 +612,7 @@ int main(int argc, char* argv[]) {
             if (event.type == SDL_QUIT) {
                 running = false;
             }
-            if (event.type == SDL_TEXTINPUT) {
+            if (event.type == SDL_TEXTINPUT && inputText.size() < 15) {
                 inputText += event.text.text;
             }
             if (event.type == SDL_KEYDOWN) {
@@ -546,7 +663,7 @@ int main(int argc, char* argv[]) {
                     case SDLK_RETURN:
                         if (CheckHandleShooting(enemy_field, cursorX, cursorY)) {
                             if (handleShooting(enemy_field, cursorX, cursorY)) {
-                                printGrid(enemy_field);
+                                //printGrid(enemy_field);
                             }
                             else {
                                 printGrid(enemy_field);
@@ -576,7 +693,11 @@ int main(int argc, char* argv[]) {
                             inputText = "";
                         }
                     }
-                    if (event.key.keysym.sym == SDLK_r) {
+                    if (event.key.keysym.sym == SDLK_TAB) {
+                        showText = !showText;
+                        std::cout << showText << std::endl;
+                    }
+                    if (event.key.keysym.sym == SDLK_LCTRL || event.key.keysym.sym == SDLK_RCTRL) {
                         score = 100;
                         number_of_shots = 100;
                         Pause = false;
@@ -591,9 +712,8 @@ int main(int argc, char* argv[]) {
                         cursorY = 0;
                         ArrowReset(grid);
                         ArrowReset(enemy_field);
-                        std::cout << "rrrrrrrrrrrrrrrrrrrrrrrrrrr" << std::endl;
-                        printGrid(grid);
-                        printGrid(enemy_field);
+                        //printGrid(grid);
+                        //printGrid(enemy_field);
                         for (int i = 0; i < 10; i++) {
                             ships[i].y = 0;
                             ships[i].x = 0;
@@ -657,7 +777,11 @@ int main(int argc, char* argv[]) {
         if (Loose == true) {
             TextRender(renderer, font, inputText.c_str(), 522, 666);
         }
-
+        // Отрисовка лидер борда
+        if (showText == true) {
+            SDL_RenderCopy(renderer, background_lb, nullptr, nullptr);
+            LBRender(renderer, font, lines);
+        }
 
         // Рендер размещённых кораблей
         if (Placement) {
@@ -665,18 +789,18 @@ int main(int argc, char* argv[]) {
                 renderShip(renderer, ships[i]);
             }
         }
-        // Рендер кораблей, которые щас размещаются и изменение статуса
-        if (currentShip < ships.size()) {
+        // Рендер кораблей, которые щас размещаются
+        if (currentShip < ships.size() && Placement) {
             renderShip(renderer, ships[currentShip]);
         }
+        // Изменение статуса
         else if(Placement == true)
         {
-            std::cout << "not plasing" << std::endl;
             Placement = false;
             Play = true;
             Player_attack = true;
             fillGridWithShips(enemy_field);
-            printGrid(enemy_field);
+            //printGrid(enemy_field);
         }
         // Рендер во время игры
         else if (Play == true) {
@@ -688,11 +812,11 @@ int main(int argc, char* argv[]) {
         // Обновление экрана
         SDL_RenderPresent(renderer);
 
+        // Атака опанента
         if (Pause) {
             SDL_Delay(500);
             Pause = false;
         }
-        // Атака опанента
         if (Enemy_attack) {
             std::cout << "tut budet atacka" << std::endl;
             if (EnemyAttack(grid)) {

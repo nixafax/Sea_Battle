@@ -29,6 +29,9 @@
     <Image Include="BG_Win.png">
       <Filter>Исходные файлы</Filter>
     </Image>
+    <Image Include="BG_LB.png">
+      <Filter>Файлы ресурсов</Filter>
+    </Image>
   </ItemGroup>
   <ItemGroup>
     <Font Include="Minecraft Rus NEW.otf">

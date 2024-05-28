@@ -137,6 +137,7 @@
   </ItemGroup>
   <ItemGroup>
     <Image Include="BG.png" />
+    <Image Include="BG_LB.png" />
     <Image Include="BG_Loose.png" />
     <Image Include="BG_Win.png" />
   </ItemGroup>
