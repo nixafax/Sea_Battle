@@ -648,7 +648,7 @@ int main(int argc, char* argv[]) {
                             placeShip(ships[currentShip], grid, currentShip + 1);
                             currentShip++;
                         }
-                        printGrid(grid);
+                        //printGrid(grid);
                     }
                 }
                 if (Player_attack) {
@@ -671,7 +671,7 @@ int main(int argc, char* argv[]) {
                                 //printGrid(enemy_field);
                             }
                             else {
-                                printGrid(enemy_field);
+                                //printGrid(enemy_field);
                                 Player_attack = false;
                                 Enemy_attack = true;
                             }
@@ -822,7 +822,6 @@ int main(int argc, char* argv[]) {
             Pause = false;
         }
         if (Enemy_attack) {
-            std::cout << "tut budet atacka" << std::endl;
             if (EnemyAttack(grid)) {
                 surroundSunkShips(grid);
                 Pause = true;
