@@ -312,15 +312,24 @@ void renderCursor(SDL_Renderer* renderer, const std::vector<std::vector<int>>& g
     SDL_SetRenderDrawColor(renderer, 255, 0, 0, SDL_ALPHA_OPAQUE);
     SDL_RenderDrawRect(renderer, &cursorRect);
 }
-
+// Выстрел играка
 bool handleShooting(std::vector<std::vector<int>>& grid, int cursorX, int cursorY) {
     if (grid[cursorX][cursorY] > 0) {
         grid[cursorX][cursorY] = -2; // Попадание
         return true; 
     }
-    else {
+    else if (grid[cursorX][cursorY] == 0) {
         grid[cursorX][cursorY] = -1; // Промах
         return false;
+    }
+}
+// Проверка перед выстрелом играка
+bool CheckHandleShooting(std::vector<std::vector<int>>& grid, int cursorX, int cursorY) {
+    if (grid[cursorX][cursorY] == -2 || grid[cursorX][cursorY] == -1) {
+        return false;
+    }
+    else {
+        return true;
     }
 }
 
@@ -448,6 +457,7 @@ int main(int argc, char* argv[]) {
     // Основной игровой цикл
     bool running = true;
     while (running) {
+        // Обработка событий
         SDL_Event event;
         while (SDL_PollEvent(&event)) {
             if (event.type == SDL_QUIT) {
@@ -499,24 +509,26 @@ int main(int argc, char* argv[]) {
                         if (cursorX < 9) cursorX++;
                         break;
                     case SDLK_RETURN:
-                        if (handleShooting(enemy_field, cursorX, cursorY)) {
-                            printGrid(enemy_field);
-                            /*number_of_shots--;
+                        if (CheckHandleShooting(enemy_field, cursorX, cursorY)) {
+                            if (handleShooting(enemy_field, cursorX, cursorY)) {
+                                printGrid(enemy_field);
+                                /*number_of_shots--;
+                                score = number_of_shots + ChangScore(grid, enemy_field);
+                                break;*/
+                            }
+                            else {
+                                printGrid(enemy_field);
+                                Player_attack = false;
+                                Enemy_attack = true;
+                            }
+                            number_of_shots--;
                             score = number_of_shots + ChangScore(grid, enemy_field);
-                            break;*/
-                        }
-                        else {
-                            printGrid(enemy_field);
-                            Player_attack = false;
-                            Enemy_attack = true;
-                        }
-                        number_of_shots--;
-                        score = number_of_shots + ChangScore(grid, enemy_field);
-                        if (CheckShip(enemy_field) == false) {
-                            Win = true;
-                            Play = false;
-                            Player_attack = false;
-                            Enemy_attack = false;
+                            if (CheckShip(enemy_field) == false) {
+                                Win = true;
+                                Play = false;
+                                Player_attack = false;
+                                Enemy_attack = false;
+                            }
                         }
                         break;
                         //score = ChangScore(grid, enemy_field);
