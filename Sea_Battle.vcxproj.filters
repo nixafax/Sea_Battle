@@ -30,7 +30,13 @@
       <Filter>Исходные файлы</Filter>
     </Image>
     <Image Include="BG_LB.png">
-      <Filter>Файлы ресурсов</Filter>
+      <Filter>Исходные файлы</Filter>
+    </Image>
+    <Image Include="MM.png">
+      <Filter>Исходные файлы</Filter>
+    </Image>
+    <Image Include="CR.png">
+      <Filter>Исходные файлы</Filter>
     </Image>
   </ItemGroup>
   <ItemGroup>

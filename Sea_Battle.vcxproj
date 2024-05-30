@@ -140,6 +140,8 @@
     <Image Include="BG_LB.png" />
     <Image Include="BG_Loose.png" />
     <Image Include="BG_Win.png" />
+    <Image Include="CR.png" />
+    <Image Include="MM.png" />
   </ItemGroup>
   <ItemGroup>
     <Font Include="Minecraft Rus NEW.otf" />

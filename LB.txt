@@ -13,5 +13,6 @@ zzzz 100
 xxx 100
 zov 90
 sdadw 70
+afona 54
 vve 34
 adawd 24

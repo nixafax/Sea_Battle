@@ -255,6 +255,25 @@ SDL_Texture* loadBackground_LB(SDL_Renderer* renderer) {
     }
     return background_lb;
 }
+// Загрузка экрана главного меню
+SDL_Texture* loadBackground_MM(SDL_Renderer* renderer) {
+    SDL_Texture* background_mm = IMG_LoadTexture(renderer, "MM.png");
+    if (background_mm == nullptr) {
+        std::cerr << "Failed to load background_mm image: " << IMG_GetError() << std::endl;
+        return nullptr;
+    }
+    return background_mm;
+}
+// Загрузка экрана создателя
+SDL_Texture* loadBackground_CR(SDL_Renderer* renderer) {
+    SDL_Texture* background_cr = IMG_LoadTexture(renderer, "CR.png");
+    if (background_cr == nullptr) {
+        std::cerr << "Failed to load background_cr image: " << IMG_GetError() << std::endl;
+        return nullptr;
+    }
+    return background_cr;
+}
+
 //Для размещения
 const int CELL_SIZE = 54;
 const int CELL_SPACING = 6;
@@ -571,6 +590,16 @@ int main(int argc, char* argv[]) {
     if (background_lb == nullptr) {
         return 1;
     }
+    // Загрузка экрана главного меню
+    SDL_Texture* background_mm = loadBackground_MM(renderer);
+    if (background_mm == nullptr) {
+        return 1;
+    }
+    // Загрузка экрана создателя
+    SDL_Texture* background_cr = loadBackground_CR(renderer);
+    if (background_cr == nullptr) {
+        return 1;
+    }
     // Инициализация SDL_ttf
     TTF_Font* font = TTF_OpenFont("Minecraft Rus NEW.otf", 48);
     if (font == nullptr) {
@@ -586,8 +615,10 @@ int main(int argc, char* argv[]) {
 
     int score = 100;
     int number_of_shots = 100;
+    bool Main_menu = true;
+    bool Creator = false;
     bool Pause = false;
-    bool Placement = true;
+    bool Placement = false;
     bool Play = false;
     bool Player_attack = false;
     bool Enemy_attack = false;
@@ -726,6 +757,28 @@ int main(int argc, char* argv[]) {
                             }
                         }
                     }
+                    
+                }
+                if (Main_menu) {
+                    if (event.key.keysym.sym == SDLK_RETURN) {
+                        Main_menu = false;
+                        Placement = true;
+                    }
+                    if (event.key.keysym.sym == SDLK_LCTRL || event.key.keysym.sym == SDLK_RCTRL) {
+                        Main_menu = false;
+                        Creator = true;
+                        break;
+                    }
+                    if (event.key.keysym.sym == SDLK_TAB) {
+                        showText = !showText;
+                    }
+                }
+                if (Creator) {
+                    if (event.key.keysym.sym == SDLK_LCTRL || event.key.keysym.sym == SDLK_RCTRL) {
+                        Main_menu = true;
+                        Creator = false;
+                        break;
+                    }
                 }
             }
         }
@@ -741,6 +794,14 @@ int main(int argc, char* argv[]) {
             else if (Loose) {
                 SDL_RenderCopy(renderer, background_loose, nullptr, nullptr);
                 //std::cout << "Loose" << std::endl;
+            }
+            else if (Main_menu) {
+                SDL_RenderCopy(renderer, background_mm, nullptr, nullptr);
+                //std::cout << "Main_menu" << std::endl;
+            }
+            else if (Creator) {
+                SDL_RenderCopy(renderer, background_cr, nullptr, nullptr);
+                //std::cout << "Creator" << std::endl;
             }
             else {
                 SDL_RenderCopy(renderer, background, nullptr, nullptr);
@@ -786,6 +847,16 @@ int main(int argc, char* argv[]) {
             SDL_RenderCopy(renderer, background_lb, nullptr, nullptr);
             LBRender(renderer, font, lines);
         }
+        // Отрисовка о себе
+        if (Creator == true)
+        {
+            TextRender(renderer, font, "А я не знаю, что тут писать. Как будто я буду", 240, 540);
+            TextRender(renderer, font, "это выкладывать куда-нибудь.", 240, 595);
+            TextRender(renderer, font, "Ну ник могу написать: Nix_Afax", 240, 650);
+            TextRender(renderer, font, "Я ващето позицианирую себя как", 240, 705);
+            TextRender(renderer, font, "моушен дизайнера.", 240, 760);
+        }
+
 
         // Рендер размещённых кораблей
         if (Placement) {
